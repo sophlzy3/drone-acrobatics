@@ -20,7 +20,7 @@ output_size = 1        # Final output size
 seq_len = 20           # Sequence length
 # ====================
 learning_rate = 1e-3
-num_epochs = 50
+num_epochs = 10
 batch_size = 32
 # ====================
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
