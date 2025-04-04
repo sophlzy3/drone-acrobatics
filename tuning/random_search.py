@@ -1,4 +1,10 @@
 def random_search_training(model_fn, dataset, param_grid, num_trials=5, device='cuda'):
+    ''' 
+    Random search takes in a parameter grid consisting of batch size, learning rate and epochs, 
+    as well as the model function, and randomly selects hyperparameters. After training with each combination, 
+    it returns the best configuration of hyperparameters. 
+    '''
+    
     best_config = None
     best_model = None
     best_loss = float('inf')
@@ -38,4 +44,13 @@ def random_search_training(model_fn, dataset, param_grid, num_trials=5, device='
         print(f"Trial {trial+1}: {config} → Loss: {avg_loss:.4f}")
 
     return best_model, best_config
+
+'''
+example grud: 
+param_grid = {
+    'batch_size': [16, 32, 64],
+    'learning_rate': [0.1, 0.01, 0.001],
+    'epochs': [5, 10, 20]
+}
+'''
 
