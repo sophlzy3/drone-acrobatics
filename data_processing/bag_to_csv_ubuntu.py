@@ -1,13 +1,17 @@
 #!/usr/bin/env python3
 import rosbag
 import pandas as pd
-import os
+import os,sys
 import numpy as np
 from collections import defaultdict
 
-def bag_to_csv(bag_names):
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
+from data.bag_names import BAGS_BASELINE, BAGS_TRAINING
+
+def bag_to_csv(bag_path,bag_names):
     for bag_name in bag_names:
-        bag_name = '/home/szylzz/Desktop/aps360-project/data/bag/'+ bag_name
+        bag_name = bag_path + bag_name
         bag_file = bag_name + '.bag'
         
         # Output directory for CSV files (same directory as the script)
@@ -100,4 +104,5 @@ bag_names = [
     '2025-04-03-20-01-06',
     '2025-03-07-23-28-38']
 
-bag_to_csv(bag_names)
+bag_path = '/home/szylzz/Desktop/aps360-project/data/baseline_bag/'
+bag_to_csv(BAGS_BASELINE)
