@@ -3,19 +3,24 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 
-def load_and_split(csv_path, target_column, test_size=0.2, val_size=0.25, random_state=42, normalize=True):
+def load_and_split(features_csv_path, labels_csv_path, test_size=0.2, val_size=0.25, random_state=42, normalize=True):
     """
-    Load a CSV file containing numerical data and split it into train, validation, and test sets.
+    Load features and labels from separate CSV files and split them into train, validation, and test sets.
     
     Parameters:
     -----------
-    csv_path : str
-    target_column : str
-        Name of the column to use as target/label
+    features_csv_path : str
+        Path to the CSV file containing feature data
+    labels_csv_path : str
+        Path to the CSV file containing label data
     test_size : float, default=0.2
+        Proportion of the dataset to include in the test split
     val_size : float, default=0.25
+        Proportion of the training set to include in the validation split
     random_state : int, default=42
+        Controls the shuffling applied to the data before applying the split
     normalize : bool, default=True
+        Whether to normalize the features using StandardScaler
         
     Returns:
     --------
@@ -25,26 +30,25 @@ def load_and_split(csv_path, target_column, test_size=0.2, val_size=0.25, random
     feature_names : list
         Names of the feature columns
     """
-    # Load the dataset
+    # Load the datasets
     try:
-        data = pd.read_csv(csv_path)
+        features_data = pd.read_csv(features_csv_path)
+        labels_data = pd.read_csv(labels_csv_path)
     except UnicodeDecodeError:
         # Try with different encodings if the default fails
-        data = pd.read_csv(csv_path, encoding='latin-1')
+        features_data = pd.read_csv(features_csv_path, encoding='latin-1')
+        labels_data = pd.read_csv(labels_csv_path, encoding='latin-1')
     
-    # Check if target_column exists in the data
-    if target_column not in data.columns:
-        raise ValueError(f"Target column '{target_column}' not found in the CSV file.")
+    # Check if the number of rows match
+    if len(features_data) != len(labels_data):
+        raise ValueError(f"Number of rows in features file ({len(features_data)}) does not match number of rows in labels file ({len(labels_data)})")
     
     # Extract features and labels
-    features = data.drop(columns=[target_column])
-    labels = data[target_column].values
+    features = features_data.values
+    labels = labels_data.values
     
     # Store feature names for later reference
-    feature_names = features.columns.tolist()
-    
-    # Convert features to numpy array
-    features = features.values
+    feature_names = features_data.columns.tolist()
     
     # Split into train, test sets
     train_x, test_x, train_y, test_y = train_test_split(
@@ -67,16 +71,16 @@ def load_and_split(csv_path, target_column, test_size=0.2, val_size=0.25, random
     return train_x, val_x, test_x, train_y, val_y, test_y, scaler, feature_names
 
 
-# # Example usage:
+# Example usage:
 # if __name__ == "__main__":
-#     # Replace with your actual CSV file and target column name
-#     csv_path = 'your_numerical_data.csv'
-#     target_column = 'target'  # Change this to your actual target column name
+#     # Replace with your actual CSV files
+#     features_csv_path = 'your_features_data.csv'
+#     labels_csv_path = 'your_labels_data.csv'
     
 #     # Load and split the data
 #     train_x, val_x, test_x, train_y, val_y, test_y, scaler, feature_names = load_and_split(
-#         csv_path=csv_path, 
-#         target_column=target_column
+#         features_csv_path=features_csv_path, 
+#         labels_csv_path=labels_csv_path
 #     )
     
 #     # Print dataset info

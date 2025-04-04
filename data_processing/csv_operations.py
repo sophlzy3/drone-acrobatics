@@ -7,20 +7,20 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from data.vars import BAGS_BASELINE, BAGS_TRAINING, PROJECT_PATH, TRAIN_UNPROCESSED_PATH, BASELINE_UNPROCESSED_PATH, SUBTOPICS
 
 
-# def combine_subtopic(input_folder):
-#     csv_files = glob.glob(os.path.join(input_folder, '*.csv'))
+def combine_subtopic(input_folder, output_file):
+    csv_files = glob.glob(os.path.join(input_folder, '*.csv'))
 
-#     if not csv_files:
-#         print("No CSV files found in the specified folder.")
-#         return
+    if not csv_files:
+        print("No CSV files found in the specified folder.")
+        return
 
-#     print(f"Found {len(csv_files)} CSV files.")
+    print(f"Found {len(csv_files)} CSV files.")
     
-#     combined_df = pd.concat((pd.read_csv(f) for f in csv_files), ignore_index=True)
+    combined_df = pd.concat((pd.read_csv(f) for f in csv_files), ignore_index=True)
 
-#     # Save to output
-#     combined_df.to_csv(output_file, index=False)
-#     print(f"Combined CSV saved to: {output_file}")
+    # Save to output
+    combined_df.to_csv(output_file, index=False)
+    print(f"Combined CSV saved to: {output_file}")
 
 import os
 import glob
@@ -32,7 +32,7 @@ def combine_csv_by_subtopic(input_folder):
     # Get paths to the subfolders
     ratethrust_folder = os.path.join(input_folder, 'ratethrust')
     state_folder = os.path.join(input_folder, 'state')
-    
+    print(f"Ratethrust folder: {ratethrust_folder}")
     # Create output directory if it doesn't exist
     os.makedirs('data', exist_ok=True)
     
