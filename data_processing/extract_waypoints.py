@@ -1,16 +1,10 @@
 import pandas as pd
 import numpy as np
-from scipy.spatial.transform import Rotation as R
 import yaml
-
-
+from scipy.spatial.transform import Rotation as R
 from sklearn.cluster import KMeans
-
-import pandas as pd
-import numpy as np
-import yaml
-from scipy.spatial.transform import Rotation as R
 from scipy.signal import find_peaks
+import matplotlib.pyplot as plt
 
 def extract_waypoints(bag_names, bag_dir, save_dir):
     for bag_name in bag_names:
@@ -79,13 +73,6 @@ def extract_waypoints(bag_names, bag_dir, save_dir):
         
         with open(f"{save_dir}/{bag_name}.yaml", "w") as f:
             yaml.dump(waypoints_yaml, f, sort_keys=False, default_flow_style=None)
-
-import pandas as pd
-import numpy as np
-import yaml
-from scipy.spatial.transform import Rotation as R
-from scipy.signal import find_peaks
-import matplotlib.pyplot as plt
 
 def extract_waypoints1(bag_names, bag_dir, save_dir, plot_detection=False):
     for bag_name in bag_names:
@@ -299,13 +286,6 @@ def extract_waypoints1(bag_names, bag_dir, save_dir, plot_detection=False):
         
         with open(f"{save_dir}/{bag_name}.yaml", "w") as f:
             yaml.dump(waypoints_yaml, f, sort_keys=False, default_flow_style=None)
-
-# Example usage:
-# bag_names = ["flight1", "flight2"]
-# extract_waypoints(bag_names, "path/to/bags", "path/to/save", plot_detection=True)
-# Example usage:
-# bag_names = ["flight1", "flight2"]
-# extract_waypoints(bag_names, "path/to/bags", "path/to/save")
 
 bag_names = [
     '2025-04-03-19-54-22',
