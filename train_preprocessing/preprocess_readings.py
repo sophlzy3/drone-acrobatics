@@ -29,3 +29,4 @@ random_dropout('data/train_ratethrust.csv', 'data/train_ratethrust.csv', dropout
 # ============= GENERATE FINAL TRAINING =========
 key_column, in1, in2, out_x, out_y = 'timestamp', 'data/train_state.csv', 'data/train_ratethrust.csv', 'data/train_x.csv', 'data/train_y.csv'
 combine_train(key_column, in1, in2, out_x, out_y)
+delete_cols(out_y, out_y, ['timestamp'])
