@@ -1,3 +1,8 @@
+import random
+import torch
+import torch.nn as nn
+import torch.utils.data
+
 def random_search_training(model_fn, dataset, param_grid, num_trials=5, device='cuda'):
     ''' 
     Random search takes in a parameter grid consisting of batch size, learning rate and epochs, 

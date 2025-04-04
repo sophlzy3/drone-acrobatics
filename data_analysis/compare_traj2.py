@@ -141,9 +141,10 @@ def compare_trajectories(file1, file2, visualize=True):
     return distance, norm_distance
 
 
+# ideal trajectory
+file1 = 'data/train_unprocessed/' + BAGS_TRAINING[0] + SUBTOPICS[0] + '.csv' 
 
-file1 = 'data/train_unprocessed/' + BAGS_TRAINING[0] + SUBTOPICS[0] + '.csv'
-
+# compare all baseline trajectories with ideal 
 comparison = {
     'norm': [],
     'raw': []

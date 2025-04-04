@@ -84,12 +84,11 @@ def compute_trajectory_similarity(file1, file2, time_col='t'):
         'Time Vector': t_common
     }
 
-# Example usage:
-# result = compute_trajectory_similarity('traj_ref.csv', 'traj_test.csv')
 
-# Example usage
-file1 = 'data/train_unprocessed/' + BAGS_TRAINING[0] + SUBTOPICS[0] + '.csv'
+# ideal trajectory
+file1 = 'data/train_unprocessed/' + BAGS_TRAINING[0] + SUBTOPICS[0] + '.csv' 
 
+# compare all baseline trajectories with ideal 
 comparison = {
     'MSE': [],
     'MAE': [],

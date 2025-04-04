@@ -1,4 +1,3 @@
-pip install scikit-optimize
 from skopt import gp_minimize
 from skopt.space import Real, Integer
 from skopt.utils import use_named_args
