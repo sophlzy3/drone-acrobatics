@@ -7,6 +7,7 @@ from torch.utils.data import DataLoader, TensorDataset
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from training.train import train
 from training.model import GRUMLPModel
+from training.load_data import load_and_split
 
 # ====== MODEL =======
 input_size = 10        # Input feature size
@@ -24,13 +25,13 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = GRUMLPModel(input_size, hidden_size, num_gru_layers, mlp_hidden_size, output_size).to(device)
 
 # ====== DATA =======
-X_train = torch.randn(1000, seq_len, input_size)
-y_train = torch.randn(1000, output_size)
-X_val = torch.randn(200, seq_len, input_size)
-y_val = torch.randn(200, output_size)
+train_x, val_x, test_x, train_y, val_y, test_y, scaler, feature_names = load_and_split(
+     csv_path='data/train.csv', 
+     target_column=['angular_rates.x','angular_rates.y','angular_rates.z','thrust.x','thrust.y','thrust.z']   # columns for model output 
+)
 
-train_dataset = TensorDataset(X_train, y_train)
-val_dataset = TensorDataset(X_val, y_val)
+train_dataset = TensorDataset(train_x, train_y)
+val_dataset = TensorDataset(val_x, val_y)
 
 train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
 val_loader = DataLoader(val_dataset, batch_size=batch_size)
