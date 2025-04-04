@@ -62,3 +62,5 @@ bag_names = [
     '2025-03-07-23-28-38']
 bag_dir = "data/unprocessed_train/"
 save_dir = "data/baseline_waypoints/"
+
+extract_waypoints(bag_names, bag_dir, save_dir)

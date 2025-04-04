@@ -1,0 +1,49 @@
+initState:
+  pos: [-3, -3, 1.0]
+  vel: [0.0, 0.0, 0.0]
+  acc: [0.0, 0.0, 0.0]
+  jer: [0.0, 0.0, 0.0]
+  rot: [1.0, 0.0, 0.0, 0.0]
+  cthrustmass: 9.8066
+
+endState:
+  pos: [-3, -3, 1.0]
+  vel: [0.0, 0.0, 0.0]
+  acc: [0.0, 0.0, 0.0]
+  jer: [0.0, 0.0, 0.0]
+  cthrustmass: 9.8066
+  rot: [1.0, 0.0, 0.0, 0.0]
+
+orders: ['wp0', 'wp1', 'wp2', 'wp3','wp0', 'wp1', 'wp2', 'wp3','wp0', 'wp1', 'wp2', 'wp3']
+
+Gate1:
+  type: 'SingleBall'
+  position: [0, -3, 1.0]
+  rpy: [0.0, 0.0, 0.0]
+  radius: 0.001
+  margin: 0.0
+  stationary: true
+
+Gate2:
+  type: 'SingleBall'
+  position: [3, 0, 1.0]
+  rpy: [0.0, 0.0, 1.57]
+  radius: 0.001
+  margin: 0.0
+  stationary: true
+
+Gate3:
+  type: 'SingleBall'
+  position: [0, 3, 1.0]
+  rpy: [0.0, 0.0, 0.0]
+  radius: 0.001
+  margin: 0.0
+  stationary: true
+
+Gate4:
+  type: 'SingleBall'
+  position: [-3, 0, 1.0]
+  rpy: [0.0, 0.0, 1.57]
+  radius: 0.001
+  margin: 0.0
+  stationary: true
