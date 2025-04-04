@@ -42,11 +42,11 @@ def extract_waypoints(bag_names, bag_dir, save_dir):
             }
 
         # Output YAML to console
-        print(yaml.dump(waypoints_yaml, sort_keys=False))
+        print(yaml.dump(waypoints_yaml, sort_keys=False, default_flow_style=None))
 
         # Optional: save to file
         with open(f"{save_dir}/{bag_name}.yaml", "w") as f:
-            yaml.dump(waypoints_yaml, f, sort_keys=False)
+            yaml.dump(waypoints_yaml, f, sort_keys=False,default_flow_style=None)
 
 bag_names = [
     '2025-04-03-19-54-22',
