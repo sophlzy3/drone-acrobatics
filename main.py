@@ -28,6 +28,29 @@ test_y = torch.FloatTensor(test_y)
 print(f"Original train_x shape: {train_x.shape}")
 print(f"Original train_y shape: {train_y.shape}")
 
+# Fill NaN values with zeros or mean values
+train_x = torch.nan_to_num(train_x, nan=0.0)
+train_y = torch.nan_to_num(train_y, nan=0.0)
+
+# Alternatively, impute NaN with column means
+# for col in range(train_x.shape[1]):
+#     col_mean = torch.mean(train_x[:, col][~torch.isnan(train_x[:, col])])
+#     train_x[:, col] = torch.where(torch.isnan(train_x[:, col]), col_mean, train_x[:, col])
+
+# Normalize data to improve training stability
+# Simple min-max scaling to the [-1, 1] range
+def normalize(x):
+    x_min = x.min(dim=0, keepdim=True)[0]
+    x_max = x.max(dim=0, keepdim=True)[0]
+    # Handle the case where min == max (avoid division by zero)
+    denom = x_max - x_min
+    denom[denom == 0] = 1.0
+    return 2 * (x - x_min) / denom - 1
+
+train_x = normalize(train_x)
+# You might want to normalize train_y as well depending on your problem
+# train_y = normalize(train_y)
+
 # ====== MODEL =======
 input_size = train_x.shape[1]  # Input feature size (number of columns)
 hidden_size = 64       # GRU hidden size
@@ -36,7 +59,7 @@ mlp_hidden_size = 32   # Hidden size for MLP
 output_size = train_y.shape[1]  # Output size (number of columns in train_y)
 seq_len = 20           # Sequence length
 # ====================
-learning_rate = 1e-4   # Reduced learning rate
+learning_rate = 1e-6  # Reduced learning rate
 num_epochs = 10
 batch_size = 32
 # ====================

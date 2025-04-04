@@ -269,3 +269,22 @@ def combine_train(key_column, in1, in2, out_x, out_y):
     # Save to out_y
     out_y_df.to_csv(out_y, index=False)
     print(f"Labels with previous row values saved to {out_y}")
+
+def fill_zeros(input_csv):
+    """
+    Load a CSV file, replace NaN values with 0, and save back to the same file.
+    """
+    # Read the CSV file
+    df = pd.read_csv(input_csv)
+    
+    # Check for NaN values
+    nan_count = df.isna().sum().sum()
+    if nan_count > 0:
+        print(f"Found {nan_count} NaN values in {input_csv}")
+    
+    # Replace NaN values with 0
+    df = df.fillna(0)
+    
+    # Save back to the same file
+    df.to_csv(input_csv, index=False)
+    print(f"NaN values replaced with zeros and saved to {input_csv}")

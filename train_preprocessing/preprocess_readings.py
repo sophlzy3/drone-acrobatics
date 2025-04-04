@@ -3,7 +3,7 @@ import os, sys
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from data.vars import BAGS_BASELINE, BAGS_TRAINING, PROJECT_PATH, TRAIN_UNPROCESSED_PATH, BASELINE_UNPROCESSED_PATH, SUBTOPICS
-from data_processing.csv_operations import delete_cols, add_noise_to_csv, random_dropout, combine_train, combine_csv_by_subtopic, combine_subtopic
+from data_processing.csv_operations import delete_cols, add_noise_to_csv, random_dropout, combine_train, combine_csv_by_subtopic, combine_subtopic, fill_zeros
 from data_processing.data_fill import fill_trajectory_fields
 
 # ============= GENERATE TRAINING DATA ALL ==============
@@ -30,3 +30,5 @@ random_dropout('data/train_ratethrust.csv', 'data/train_ratethrust.csv', dropout
 key_column, in1, in2, out_x, out_y = 'timestamp', 'data/train_state.csv', 'data/train_ratethrust.csv', 'data/train_x.csv', 'data/train_y.csv'
 combine_train(key_column, in1, in2, out_x, out_y)
 delete_cols(out_y, out_y, ['timestamp'])
+fill_zeros(out_x)
+fill_zeros(out_y)
