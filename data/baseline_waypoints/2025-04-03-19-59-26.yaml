@@ -1,36 +1,29 @@
 waypoints:
   wp0:
     type: SingleBall
-    position: [-2.9986, -3.0003, 1.1598]
-    rpy: [0.1295, -0.0762, -91.5357]
+    position: [-0.3121, -2.9891, 1.0561]
+    rpy: [-44.9219, 5.6528, -21.0489]
     radius: 0.001
     margin: 0.0
     stationary: true
   wp1:
     type: SingleBall
-    position: [-3.0037, -3.0015, 1.1598]
-    rpy: [-0.2499, -0.1423, -91.883]
+    position: [0.3299, 2.9932, 1.0501]
+    rpy: [-44.6259, 5.5575, 159.2086]
     radius: 0.001
     margin: 0.0
     stationary: true
   wp2:
-    type: SingleBall
-    position: [-2.9543, -3.4886, 1.0712]
-    rpy: [6.3444, -24.7376, -89.7576]
-    radius: 0.001
-    margin: 0.0
-    stationary: true
-  wp3:
     type: SingleBall
     position: [-2.9547, -3.4891, 1.0705]
     rpy: [6.1191, -25.0104, -89.5941]
     radius: 0.001
     margin: 0.0
     stationary: true
-  wp4:
+  wp3:
     type: SingleBall
-    position: [-2.9964, -2.9746, 1.1589]
-    rpy: [0.2392, 2.3384, -90.1732]
+    position: [-3.0012, -2.9379, 1.1536]
+    rpy: [0.6997, 5.8575, -87.4222]
     radius: 0.001
     margin: 0.0
     stationary: true
