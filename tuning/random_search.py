@@ -46,7 +46,7 @@ def random_search_training(model_fn, dataset, param_grid, num_trials=5, device='
     return best_model, best_config
 
 '''
-example grud: 
+example grid: 
 param_grid = {
     'batch_size': [16, 32, 64],
     'learning_rate': [0.1, 0.01, 0.001],
