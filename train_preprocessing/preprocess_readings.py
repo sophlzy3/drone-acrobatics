@@ -27,4 +27,5 @@ random_dropout('data/train_state.csv', 'data/train_state.csv', dropout_fraction=
 random_dropout('data/train_ratethrust.csv', 'data/train_ratethrust.csv', dropout_fraction=0.01, skip_columns=None)
 
 # ============= GENERATE FINAL TRAINING =========
-# combine_train('data/train_state.csv', 'data/train_ratethrust.csv', 'timestamp', 'data/train_final.csv')
+key_column, in1, in2, out_x, out_y = 'timestamp', 'data/train_state.csv', 'data/train_ratethrust.csv', 'data/train_x.csv', 'data/train_y.csv'
+combine_train(key_column, in1, in2, out_x, out_y)

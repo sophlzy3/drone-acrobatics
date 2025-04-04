@@ -106,11 +106,6 @@ def combine_csv_by_subtopic(input_folder):
     else:
         print("No matching files were found to combine.")
 
-# Example usage
-if __name__ == "__main__":
-    input_folder = "path_to_your_input_folder"  # Replace with your actual input folder path
-    combine_csv_by_subtopic(input_folder)
-
 def delete_cols(input_csv, output_csv, columns_to_delete):
     df = pd.read_csv(input_csv)
 
@@ -190,12 +185,87 @@ def random_dropout(input_csv, output_csv, dropout_fraction=0.01, skip_columns=No
     final_df.to_csv(output_csv, index=False)
     print(f"Random dropout applied and saved to: {output_csv}")
 
-def combine_train(file1, file2, key_column, output_path):
-    # Read the CSV files
-    df1 = pd.read_csv(file1)
-    df2 = pd.read_csv(file2)
+def combine_train(key_column, in1, in2, out_x, out_y):
+    """
+    Combine two CSV files row by row based on a key column.
+    If key_column values differ, keep the value from in1.
+    For out_y, use values from the previous row for specific columns.
+    Delete the last row of df1.
     
-    # Merge the dataframes on the key column
-    merged_df = pd.merge(df1, df2, on=key_column, how='inner')
-    merged_df.to_csv(output_path, index=False)
-    print("Files merged successfully!")
+    Parameters:
+    -----------
+    in1 : str
+        Path to the first input CSV file
+    in2 : str
+        Path to the second input CSV file
+    key_column : str
+        Name of the column to use as the key for merging
+    out_x : str
+        Path to save the output CSV file for features
+    out_y : str
+        Path to save the output CSV file for labels
+    """
+    # Read the CSV files
+    df1 = pd.read_csv(in1)
+    df2 = pd.read_csv(in2)
+    
+    # Ensure both dataframes have the key column
+    if key_column not in df1.columns:
+        raise ValueError(f"Key column '{key_column}' not found in {in1}")
+    if key_column not in df2.columns:
+        raise ValueError(f"Key column '{key_column}' not found in {in2}")
+    
+    # Delete the last row of df1
+    df1 = df1.iloc[:-1]
+    
+    # Create a new dataframe for the output
+    result_df = df1.copy()
+    
+    # Get columns from df2 that are not in df1 (excluding the key column)
+    df2_cols = [col for col in df2.columns if col != key_column]
+    
+    # Add these columns to the result dataframe
+    for col in df2_cols:
+        result_df[col] = None
+    
+    # Create a dictionary for faster lookup of df2 values
+    df2_dict = {row[key_column]: row for _, row in df2.iterrows()}
+    
+    # Iterate through each row in df1
+    for idx, row in result_df.iterrows():
+        key_value = row[key_column]
+        
+        # Check if key exists in df2_dict
+        if key_value in df2_dict:
+            # If a match is found, copy values from df2
+            for col in df2_cols:
+                result_df.at[idx, col] = df2_dict[key_value][col]
+    
+    # Save the result to out_x
+    result_df.to_csv(out_x, index=False)
+    print(f"Combined data saved to {out_x}")
+    
+    # For out_y, create a new dataframe with values from the previous row
+    # for specific columns
+    out_y_df = df2.copy()
+    
+    # Columns to use from the previous row
+    prev_row_cols = ['angular_rates.x', 'angular_rates.y', 'angular_rates.z', 
+                     'thrust.x', 'thrust.y', 'thrust.z']
+    
+    # Check if all required columns exist
+    for col in prev_row_cols:
+        if col not in out_y_df.columns:
+            print(f"Warning: Column '{col}' not found in {in2}")
+    
+    # Shift values for the specified columns
+    for col in prev_row_cols:
+        if col in out_y_df.columns:
+            out_y_df[col] = out_y_df[col].shift(1)
+    
+    # Delete the first row (which now has NaN values)
+    out_y_df = out_y_df.iloc[1:]
+    
+    # Save to out_y
+    out_y_df.to_csv(out_y, index=False)
+    print(f"Labels with previous row values saved to {out_y}")

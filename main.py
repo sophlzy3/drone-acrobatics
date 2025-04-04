@@ -25,9 +25,14 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = GRUMLPModel(input_size, hidden_size, num_gru_layers, mlp_hidden_size, output_size).to(device)
 
 # ====== DATA =======
+# train_x, val_x, test_x, train_y, val_y, test_y, scaler, feature_names = load_and_split(
+#      csv_path='data/train.csv', 
+#      target_column=['angular_rates.x','angular_rates.y','angular_rates.z','thrust.x','thrust.y','thrust.z']   # columns for model output 
+# )
+
 train_x, val_x, test_x, train_y, val_y, test_y, scaler, feature_names = load_and_split(
-     csv_path='data/train.csv', 
-     target_column=['angular_rates.x','angular_rates.y','angular_rates.z','thrust.x','thrust.y','thrust.z']   # columns for model output 
+     features_csv_path='data/train_x.csv', 
+     labels_csv_path='data/train_y.csv'
 )
 
 train_dataset = TensorDataset(train_x, train_y)
