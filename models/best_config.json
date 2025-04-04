@@ -1,0 +1,6 @@
+{
+    "batch_size": 128,
+    "lr": 0.0005,
+    "epochs": 20,
+    "clip_value": 0.5
+}

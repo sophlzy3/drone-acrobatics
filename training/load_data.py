@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import torch
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 
@@ -67,6 +68,14 @@ def load_and_split(features_csv_path, labels_csv_path, test_size=0.2, val_size=0
         train_x = scaler.fit_transform(train_x)
         val_x = scaler.transform(val_x)
         test_x = scaler.transform(test_x)
+    
+    train_x = torch.FloatTensor(train_x)
+    train_y = torch.FloatTensor(train_y)
+    val_x = torch.FloatTensor(val_x)
+    val_y = torch.FloatTensor(val_y)
+    test_x = torch.FloatTensor(test_x)
+    test_y = torch.FloatTensor(test_y)
+
     
     return train_x, val_x, test_x, train_y, val_y, test_y, scaler, feature_names
 
