@@ -88,7 +88,7 @@ def compute_trajectory_similarity(file1, file2, time_col='t'):
 # result = compute_trajectory_similarity('traj_ref.csv', 'traj_test.csv')
 
 # Example usage
-file1 = TRAIN_UNPROCESSED_PATH + BAGS_TRAINING[0] + SUBTOPICS[0] + '.csv'
+file1 = 'data/train_unprocessed/' + BAGS_TRAINING[0] + SUBTOPICS[0] + '.csv'
 
 comparison = {
     'MSE': [],

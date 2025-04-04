@@ -10,17 +10,12 @@ def load_and_split(csv_path, target_column, test_size=0.2, val_size=0.25, random
     Parameters:
     -----------
     csv_path : str
-        Path to the CSV file
     target_column : str
         Name of the column to use as target/label
     test_size : float, default=0.2
-        Proportion of the data to include in the test split
     val_size : float, default=0.25
-        Proportion of the training data to include in the validation split
     random_state : int, default=42
-        Random seed for reproducibility
     normalize : bool, default=True
-        Whether to normalize the features using StandardScaler
         
     Returns:
     --------

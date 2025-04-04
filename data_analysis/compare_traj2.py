@@ -142,7 +142,7 @@ def compare_trajectories(file1, file2, visualize=True):
 
 
 
-file1 = TRAIN_UNPROCESSED_PATH + BAGS_TRAINING[0] + SUBTOPICS[0] + '.csv'
+file1 = 'data/train_unprocessed/' + BAGS_TRAINING[0] + SUBTOPICS[0] + '.csv'
 
 comparison = {
     'norm': [],

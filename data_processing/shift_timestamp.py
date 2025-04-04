@@ -18,7 +18,7 @@ def normalize_timestamp(csv_path, output_path=None, time_col='timestamp'):
 
 for bag_name in BAGS_TRAINING:
      for subtopic in SUBTOPICS:         
-          csv_path = os.path.join(TRAIN_UNPROCESSED_PATH, f"{bag_name}{subtopic}.csv")
+          csv_path = os.path.join('data/train_unprocessed/', f"{bag_name}{subtopic}.csv")
           normalize_timestamp(csv_path)
 
 for bag_name in BAGS_BASELINE:
