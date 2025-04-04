@@ -3,13 +3,10 @@ import os
 import numpy as np
 import torch
 from torch.utils.data import DataLoader, TensorDataset
+
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-
-
-# # Add the parent directory to sys.path
-import src.guassian_noise as gn
-from src.train import train
-from src.model import GRUMLPModel
+from training.train import train
+from training.model import GRUMLPModel
 
 # ====== MODEL =======
 input_size = 10        # Input feature size

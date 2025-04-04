@@ -4,7 +4,6 @@ import torch.optim as optim
 from torch.utils.data import DataLoader, TensorDataset
 import matplotlib.pyplot as plt
 
-
 def train(model, train_loader, val_loader, lr, num_epochs, plotting=True):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
