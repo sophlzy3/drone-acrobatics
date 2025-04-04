@@ -7,7 +7,7 @@ from collections import defaultdict
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from data.bag_names import BAGS_BASELINE, BAGS_TRAINING
+from data.vars import BAGS_BASELINE, BAGS_TRAINING
 
 def bag_to_csv(bag_path,bag_names):
     for bag_name in bag_names:
