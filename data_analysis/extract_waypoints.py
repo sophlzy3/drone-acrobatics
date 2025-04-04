@@ -4,49 +4,40 @@ from scipy.spatial.transform import Rotation as R
 import yaml
 
 
+from sklearn.cluster import KMeans
+
 def extract_waypoints(bag_names, bag_dir, save_dir):
     for bag_name in bag_names:
-        filepath = bag_dir + bag_name + "_flightgoggles_agiros_pilot_state.csv"
-        # Load CSV
+        filepath = f"{bag_dir}/{bag_name}_flightgoggles_agiros_pilot_state.csv"
         df = pd.read_csv(filepath)
 
-        # Example columns: ['time', 'pos_x', 'pos_y', 'pos_z', ...]
         positions = df[['pose.position.x','pose.position.y','pose.position.z']].to_numpy()
         quaternions = df[['pose.orientation.x','pose.orientation.y','pose.orientation.z','pose.orientation.w']].to_numpy()
 
-        # Compute direction vectors and angle changes
-        dirs = np.diff(positions, axis=0)
-        dirs_normed = dirs / np.linalg.norm(dirs, axis=1, keepdims=True)
-        angles = np.arccos(np.clip(np.sum(dirs_normed[1:] * dirs_normed[:-1], axis=1), -1.0, 1.0))
+        # Cluster trajectory into 4 segments (you expect 4 corners)
+        kmeans = KMeans(n_clusters=4, random_state=0).fit(positions)
+        centroids = kmeans.cluster_centers_
 
-        # Find sharpest 4 turns + start
-        turn_indices = np.where(angles > 0.3)[0]
-        key_indices = [0] + sorted(turn_indices[np.argsort(-angles[turn_indices])[:4]].tolist())
-        key_indices = sorted(set(key_indices))  # remove duplicates and sort
-
-        # Prepare YAML structure
+        # Convert orientations at cluster centers (by finding nearest index)
         waypoints_yaml = {"waypoints": {}}
-        orientations_euler = R.from_quat(quaternions[key_indices]).as_euler('xyz', degrees=True)
+        for i, center in enumerate(centroids):
+            # Find closest original point
+            distances = np.linalg.norm(positions - center, axis=1)
+            idx = np.argmin(distances)
+            euler = R.from_quat(quaternions[idx]).as_euler('xyz', degrees=True)
 
-        for i, idx in enumerate(key_indices):
-            name = f"wp{i}"
-            pos = positions[idx].tolist()
-            ori = orientations_euler[i].tolist()
-            waypoints_yaml["waypoints"][name] = {
+            waypoints_yaml["waypoints"][f"wp{i}"] = {
                 "type": "SingleBall",
-                "position": [round(p, 4) for p in pos],
-                "rpy": [round(o, 4) for o in ori],
+                "position": [round(p, 4) for p in positions[idx]],
+                "rpy": [round(o, 4) for o in euler],
                 "radius": 0.001,
                 "margin": 0.0,
                 "stationary": True
             }
 
-        # Output YAML to console
         print(yaml.dump(waypoints_yaml, sort_keys=False, default_flow_style=None))
-
-        # Optional: save to file
         with open(f"{save_dir}/{bag_name}.yaml", "w") as f:
-            yaml.dump(waypoints_yaml, f, sort_keys=False,default_flow_style=None)
+            yaml.dump(waypoints_yaml, f, sort_keys=False, default_flow_style=None)
 
 bag_names = [
     '2025-04-03-19-54-22',
