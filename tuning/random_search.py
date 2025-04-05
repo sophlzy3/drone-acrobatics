@@ -7,6 +7,8 @@ import torch.utils.data
 from torch.utils.data import TensorDataset
 import matplotlib.pyplot as plt
 import time
+from torch.utils.data import DataLoader, TensorDataset
+
 
 # Add project root to path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
@@ -16,7 +18,7 @@ from training.test import test_model
 from training.load_data import load_and_split
 
 
-def random_search_training(train_dataset, val_dataset, test_dataset, param_grid, input_size, output_size, train_clip=True, num_trials=5, device='cuda'):
+def random_search_training(param_grid, num_trials=5, device='cuda'):
     ''' 
     Random search takes in a parameter grid consisting of batch size, learning rate, epochs and clip value, 
     as well as the model function, and randomly selects hyperparameters. After training with each combination, 
@@ -29,6 +31,7 @@ def random_search_training(train_dataset, val_dataset, test_dataset, param_grid,
     best_train_losses = None
     best_val_losses = None
     best_test_metrics = None
+    best_score = float('inf')
 
     for trial in range(num_trials):
         # Randomly sample parameters
@@ -36,68 +39,78 @@ def random_search_training(train_dataset, val_dataset, test_dataset, param_grid,
             'batch_size': random.choice(param_grid['batch_size']),
             'lr': random.choice(param_grid['learning_rate']),
             'epochs': random.choice(param_grid['epochs']),
-            'clip_value': random.choice(param_grid['clip_value']) if 'clip_value' in param_grid else 1.0,
+            # 'clip_value': random.choice(param_grid['clip_value']) if 'clip_value' in param_grid else 1.0,
             'hidden_size': random.choice(param_grid['hidden_size']),
             'num_gru_layers': random.choice(param_grid['num_gru_layers']),
             'mlp_hidden_size': random.choice(param_grid['mlp_hidden_size']) 
         }
 
-        # Setup DataLoaders
-        train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=config['batch_size'], shuffle=True)
-        val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=config['batch_size'])
-        test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=config['batch_size'])
-
-        # Initialize and train model
-        model = GRUMLPModel(
-            input_size=input_size,
-            hidden_size=config['hidden_size'],
-            num_gru_layers=config['num_gru_layers'],
-            mlp_hidden_size=config['mlp_hidden_size'],
-            output_size=output_size
+        # ====== DATA =======
+        train_x, val_x, test_x, train_y, val_y, test_y, scaler, feature_names = load_and_split(
+            features_csv_path='data/train_x.csv', 
+            labels_csv_path='data/train_y.csv'
         )
-        model = model.to(device)
+        train_x = torch.nan_to_num(train_x, nan=0.0)
+        train_y = torch.nan_to_num(train_y, nan=0.0)
+        val_x = torch.nan_to_num(val_x, nan=0.0)
+        val_y = torch.nan_to_num(val_y, nan=0.0)
+        test_x = torch.nan_to_num(test_x, nan=0.0)
+        test_y = torch.nan_to_num(test_y, nan=0.0)
+
+        train_x = normalize(train_x)
+        # train_y = normalize(train_y)
+
+        # ====== MODEL INIT =======
+        seq_len = 20
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        input_size = train_x.shape[1]
+        output_size = train_y.shape[1]
+        model = GRUMLPModel(input_size, config['hidden_size'], config['num_gru_layers'], config['mlp_hidden_size'], output_size).to(device)
         model.apply(init_weights)
-
-        # Print which training function we're using
-        print(f"Training with config: {config}")
-        
-        # Train with gradient clipping - make sure this function exists in training.train
-        if train_clip:
-            train_losses, val_losses = train_with_clipping(
-                model, 
-                train_loader, 
-                val_loader, 
-                lr=config['lr'], 
-                num_epochs=config['epochs'], 
-                plotting=False,
-                clip_value=config['clip_value']
-            )
-        else:
-            train_losses, val_losses = train(
-                model, 
-                train_loader, 
-                val_loader, 
-                lr=config['lr'], 
-                num_epochs=config['epochs'], 
-                plotting=False
-            )
-        # print(f"Train Losses: {train_losses:.5f}\t Val Losses: {val_losses:.5f}")   
-        # print(f"Train Losses: {train_losses}\t Val Losses: {val_losses}") 
+        train_x_seq, train_y_seq, val_x_seq, val_y_seq, test_x_seq, test_y_seq = reshape_data(train_x, train_y, val_x, val_y, test_x, test_y, seq_len)
 
 
-        # Evaluate on test set
+        # ====== LOADER INIT =======
+        train_dataset = TensorDataset(train_x_seq, train_y_seq)
+        val_dataset = TensorDataset(val_x_seq, val_y_seq)
+
+        train_loader = DataLoader(train_dataset, batch_size=config['batch_size'], shuffle=True)
+        val_loader = DataLoader(val_dataset, batch_size=config['batch_size'])
+
+        # =========== TRAINING ===========
+        train_losses, val_losses = train(model, train_loader, val_loader, lr=config['lr'], num_epochs=config['epochs'], plotting=False)
+        # train_losses, val_losses = train_with_clipping(model, train_loader, val_loader, lr=config['lr'], num_epochs=config['epochs'], plotting=False, clip_value=config['clip_value'])
+
+        # =========== TESTING ===========
+        # Prepare test data loader
+        test_dataset = TensorDataset(test_x_seq, test_y_seq)
+        test_loader = DataLoader(test_dataset, batch_size=config['batch_size'])
+
+        # Test the model
         test_metrics = test_model(model, test_loader, plotting=False)
-        rmse = test_metrics['rmse']
 
-        if rmse < best_metric:
-            best_metric = rmse
+        # Print overall test summary
+        print(f"\nTest Summary:")
+        print(f"RMSE: {test_metrics['rmse']:.6f}")
+        print(f"R² Score: {test_metrics['r2']:.6f}")
+
+        # Create a weighted score that considers all three error sources
+        current_score = (
+            0.2 * np.mean(train_losses[-5:]) +  # Recent training loss (less weight)
+            10 * np.mean(val_losses[-5:]) +    # Recent validation loss (medium weight)
+            0.5 * test_metrics['rmse']          # Test RMSE (highest weight)
+        )
+
+        if current_score < best_score:  # Lower is better
+            best_score = current_score
+            best_metric = test_metrics['rmse']  # Still track individual metrics
             best_model = model
             best_config = config
             best_train_losses = train_losses
             best_val_losses = val_losses
             best_test_metrics = test_metrics
 
-        print(f"Trial {trial+1}: {config} → RMSE: {rmse:.4f}\n")
+        print(f"Trial {trial+1}: {config} → RMSE: {test_metrics['rmse']:.4f}\n")
 
     print(f"\nBest configuration: {best_config} with RMSE: {best_metric:.4f}")
     
@@ -122,56 +135,8 @@ def main(param_grid, trials):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
     
-    # Load and preprocess data
-    print("Loading data...")
-    train_x, val_x, test_x, train_y, val_y, test_y, scaler, feature_names = load_and_split(
-        features_csv_path='data/train_x.csv', 
-        labels_csv_path='data/train_y.csv'
-    )
-    
-    # Handle NaN values
-    train_x = torch.nan_to_num(train_x, nan=0.0)
-    val_x = torch.nan_to_num(val_x, nan=0.0)
-    test_x = torch.nan_to_num(test_x, nan=0.0)
-    train_y = torch.nan_to_num(train_y, nan=0.0)
-    val_y = torch.nan_to_num(val_y, nan=0.0)
-    test_y = torch.nan_to_num(test_y, nan=0.0)
-    
-    # Normalize data
-    train_x = normalize(train_x)
-    val_x = normalize(val_x)
-    test_x = normalize(test_x)
-    
-    # Create sequences for GRU
-    seq_len = 20  # Sequence length
-    train_x_seq, train_y_seq, val_x_seq, val_y_seq, test_x_seq, test_y_seq = reshape_data(train_x, train_y, val_x, val_y, test_x, test_y, seq_len)
-    
-    # Create datasets
-    train_dataset = TensorDataset(train_x_seq, train_y_seq)
-    val_dataset = TensorDataset(val_x_seq, val_y_seq)
-    test_dataset = TensorDataset(test_x_seq, test_y_seq)
-    
-    print(f"Data shapes after preprocessing:")
-    print(f"Train X: {train_x_seq.shape}, Train Y: {train_y_seq.shape}")
-    print(f"Val X: {val_x_seq.shape}, Val Y: {val_y_seq.shape}")
-    print(f"Test X: {test_x_seq.shape}, Test Y: {test_y_seq.shape}")
-    
-    # Create model function
-    input_size = train_x.shape[1]  # Number of features
-    output_size = train_y.shape[1]  # Number of target variables
-    
-    # Run random search
-    print("\nStarting random search for hyperparameters...")
-    best_model, best_results = random_search_training(
-        train_dataset,
-        val_dataset,
-        test_dataset,
-        param_grid,
-        input_size=input_size,
-        output_size=output_size,
-        num_trials=trials,
-        device=device
-    )
+    print("starting random search...")
+    best_model, best_results = random_search_training(param_grid, trials, device='cuda')
     
     # Save best model
     print("Saving best model and results...")
@@ -200,8 +165,7 @@ def main(param_grid, trials):
     plt.ylabel('Loss')
     plt.title('Training and Validation Loss for Best Model')
     plt.legend()
-    plt.savefig('models/best_model_loss_plot.png')
-    plt.close()
+    plt.show()
     
     print(f"Best model saved with configuration: {best_results['config']}")
     print(f"Test metrics: {best_results['test_metrics']}")
@@ -209,105 +173,21 @@ def main(param_grid, trials):
     return best_model, best_results
 
 
-import json
-import matplotlib.pyplot as plt
-import os
-import sys
-
-# Add project root to path if needed
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-
-def plot_loss_from_json(json_path, save_path=None):
-    """
-    Plot training and validation loss from a saved results JSON file.
-    
-    Args:
-        json_path: Path to the JSON file with loss data
-        save_path: Optional path to save the plot (if None, will display plot)
-    """
-    # Load the JSON data
-    with open(json_path, 'r') as f:
-        results = json.load(f)
-    
-    # Extract training and validation losses
-    train_losses = results['train_losses']
-    val_losses = results['val_losses']
-    
-    # Create the figure
-    plt.figure(figsize=(12, 7))
-    
-    # Plot losses
-    plt.plot(train_losses, label='Training Loss', color='blue', linewidth=2)
-    plt.plot(val_losses, label='Validation Loss', color='red', linewidth=2)
-    
-    # Add grid and styling
-    plt.grid(True, linestyle='--', alpha=0.6)
-    plt.xlabel('Epochs', fontsize=12)
-    plt.ylabel('Loss (MSE)', fontsize=12)
-    
-    # Add title with model info
-    architecture = results.get('architecture', {})
-    config = results.get('config', {})
-    title = f"Training and Validation Loss\n"
-    if architecture:
-        title += f"Architecture: {architecture['hidden_size']} hidden, {architecture['num_gru_layers']} GRU layers\n"
-    if config:
-        title += f"LR: {config.get('lr', 'N/A')}, Batch: {config.get('batch_size', 'N/A')}"
-    
-    plt.title(title, fontsize=14)
-    
-    # Add legend with metrics if available
-    legend_text = ['Training Loss', 'Validation Loss']
-    if 'test_metrics' in results:
-        metrics = results['test_metrics']
-        plt.figtext(0.5, 0.01, 
-                   f"Test RMSE: {metrics.get('rmse', 'N/A'):.4f} | "
-                   f"Test R²: {metrics.get('r2', 'N/A'):.4f} | "
-                   f"Test MAE: {metrics.get('mae', 'N/A'):.4f}",
-                   ha="center", fontsize=12, 
-                   bbox={"facecolor":"lightgray", "alpha":0.5, "pad":5})
-    
-    plt.legend(legend_text, loc='upper right')
-    
-    # Improve layout
-    plt.tight_layout(rect=[0, 0.03, 1, 0.97])
-    
-    # Save or show
-    if save_path:
-        plt.savefig(save_path, dpi=300, bbox_inches='tight')
-        print(f"Plot saved to {save_path}")
-    else:
-        plt.show()
-    
-    plt.close()
-
 if __name__ == "__main__":
-    # Default paths
-    json_path = 'models/best_results.json'
-    save_path = 'models/loss_plot.png'
-    
-    # Allow command line arguments to specify paths
-    if len(sys.argv) > 1:
-        json_path = sys.argv[1]
-    if len(sys.argv) > 2:
-        save_path = sys.argv[2]
-    
-    plot_loss_from_json(json_path, save_path)
-# if __name__ == "__main__":
-    # # Create models directory if it doesn't exist
-    # os.makedirs('models', exist_ok=True)
+    # Create models directory if it doesn't exist
+    os.makedirs('models', exist_ok=True)
 
-    # param_grid = {
-    #     'batch_size': [16, 32, 64, 128],
-    #     'learning_rate': [0.01, 0.005, 0.001, 0.0005, 0.0001],
-    #     'epochs': [20, 50, 100],
-    #     'clip_value': [0.1, 0.5, 1.0, 2.0, 5.0],
-    #     'hidden_size': [32, 64, 128],
-    #     'num_gru_layers': [1, 2, 3],
-    #     'mlp_hidden_size': [16, 32, 64]
-    # } 
-    # trials = 20
+    param_grid = {
+        'batch_size': [16, 32, 64, 128],
+        'learning_rate': [1e-4, 1e-6, 1e-8],
+        'epochs': [30, 40, 50, 60, 70, 80, 90, 100],
+        # 'clip_value': [0.1, 0.5, 1.0, 2.0, 5.0],
+        'hidden_size': [64, 128, 256, 512, 1024, 2048],
+        'num_gru_layers': [3,30,50],
+        'mlp_hidden_size': [16, 32, 64, 128, 256, 512, 1024, 2048]
+    } 
+    trials = 3
     
-    # # Run hyperparameter tuning
-    # best_model, best_results = main(param_grid, trials)
+    # Run hyperparameter tuning
+    best_model, best_results = main(param_grid, trials)
     

@@ -120,6 +120,7 @@ def train(model, train_loader, val_loader, lr, num_epochs, plotting=True):
         plt.legend()
         plt.title("Training and Validation Loss")
         plt.show()
+    return train_losses, val_losses
 
 def train_with_clipping(model, train_loader, val_loader, lr, num_epochs, plotting=True, clip_value=1.0):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")

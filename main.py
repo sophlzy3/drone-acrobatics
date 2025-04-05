@@ -27,15 +27,17 @@ train_x = normalize(train_x)
 
 # ====== MODEL INIT =======
 input_size = train_x.shape[1]  # Input feature size (number of columns)
-hidden_size = 64       # GRU hidden size
-num_gru_layers = 3     # Number of GRU layers
-mlp_hidden_size = 32   # Hidden size for MLP
 output_size = train_y.shape[1]  # Output size (number of columns in train_y)
 seq_len = 20           # Sequence length
 # ====================
-learning_rate = 0.0001
-num_epochs = 20
-batch_size = 16
+
+batch_size = 64
+learning_rate = 1e-6
+num_epochs = 300
+hidden_size = 64
+num_gru_layers = 10
+mlp_hidden_size = 600
+
 # ====================
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = GRUMLPModel(input_size, hidden_size, num_gru_layers, mlp_hidden_size, output_size).to(device)
@@ -55,8 +57,8 @@ train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
 val_loader = DataLoader(val_dataset, batch_size=batch_size)
 
 # =========== TRAINING ===========
-# train(model, train_loader, val_loader, lr=learning_rate, num_epochs=num_epochs, plotting=True)
-train_with_clipping(model, train_loader, val_loader, lr=learning_rate, num_epochs=num_epochs, plotting=True, clip_value=0.5)
+train(model, train_loader, val_loader, lr=learning_rate, num_epochs=num_epochs, plotting=True)
+# train_with_clipping(model, train_loader, val_loader, lr=learning_rate, num_epochs=num_epochs, plotting=True, clip_value=clip)
 
 # =========== TESTING ===========
 # Prepare test data loader
@@ -65,8 +67,3 @@ test_loader = DataLoader(test_dataset, batch_size=batch_size)
 
 # Test the model
 test_metrics = test_model(model, test_loader, plotting=True)
-
-# Print overall test summary
-print(f"\nTest Summary:")
-print(f"RMSE: {test_metrics['rmse']:.6f}")
-print(f"R² Score: {test_metrics['r2']:.6f}")
