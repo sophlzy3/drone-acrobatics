@@ -16,7 +16,7 @@ from training.test import test_model
 from training.load_data import load_and_split
 
 
-def random_search_training(model_fn, train_dataset, val_dataset, test_dataset, param_grid, train_clip=True, num_trials=5, device='cuda'):
+def random_search_training(train_dataset, val_dataset, test_dataset, param_grid, input_size, output_size, train_clip=True, num_trials=5, device='cuda'):
     ''' 
     Random search takes in a parameter grid consisting of batch size, learning rate, epochs and clip value, 
     as well as the model function, and randomly selects hyperparameters. After training with each combination, 
@@ -36,7 +36,10 @@ def random_search_training(model_fn, train_dataset, val_dataset, test_dataset, p
             'batch_size': random.choice(param_grid['batch_size']),
             'lr': random.choice(param_grid['learning_rate']),
             'epochs': random.choice(param_grid['epochs']),
-            'clip_value': random.choice(param_grid['clip_value']) if 'clip_value' in param_grid else 1.0
+            'clip_value': random.choice(param_grid['clip_value']) if 'clip_value' in param_grid else 1.0,
+            'hidden_size': random.choice(param_grid['hidden_size']),
+            'num_gru_layers': random.choice(param_grid['num_gru_layers']),
+            'mlp_hidden_size': random.choice(param_grid['mlp_hidden_size']) 
         }
 
         # Setup DataLoaders
@@ -45,9 +48,16 @@ def random_search_training(model_fn, train_dataset, val_dataset, test_dataset, p
         test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=config['batch_size'])
 
         # Initialize and train model
-        model = model_fn()
+        model = GRUMLPModel(
+            input_size=input_size,
+            hidden_size=config['hidden_size'],
+            num_gru_layers=config['num_gru_layers'],
+            mlp_hidden_size=config['mlp_hidden_size'],
+            output_size=output_size
+        )
         model = model.to(device)
-        
+        model.apply(init_weights)
+
         # Print which training function we're using
         print(f"Training with config: {config}")
         
@@ -103,20 +113,6 @@ def random_search_training(model_fn, train_dataset, val_dataset, test_dataset, p
     
     return best_model, best_results
 
-def create_model_fn(input_size=38, hidden_size=64, num_gru_layers=2, mlp_hidden_size=32, output_size=6):
-    """Factory function to create a new model with given parameters"""
-    def model_creator():
-        model = GRUMLPModel(
-            input_size=input_size,
-            hidden_size=hidden_size,
-            num_gru_layers=num_gru_layers,
-            mlp_hidden_size=mlp_hidden_size,
-            output_size=output_size
-        )
-        model.apply(init_weights)
-        return model
-    return model_creator
-
 def main(param_grid, trials):
     # Set random seeds for reproducibility
     torch.manual_seed(42)
@@ -163,22 +159,16 @@ def main(param_grid, trials):
     # Create model function
     input_size = train_x.shape[1]  # Number of features
     output_size = train_y.shape[1]  # Number of target variables
-    model_fn = create_model_fn(
-        input_size=input_size,
-        hidden_size=64,
-        num_gru_layers=2,
-        mlp_hidden_size=32,
-        output_size=output_size
-    )
     
     # Run random search
     print("\nStarting random search for hyperparameters...")
     best_model, best_results = random_search_training(
-        model_fn,
         train_dataset,
         val_dataset,
         test_dataset,
         param_grid,
+        input_size=input_size,
+        output_size=output_size,
         num_trials=trials,
         device=device
     )
@@ -218,18 +208,106 @@ def main(param_grid, trials):
     
     return best_model, best_results
 
-if __name__ == "__main__":
-    # Create models directory if it doesn't exist
-    os.makedirs('models', exist_ok=True)
 
-    param_grid = {
-        'batch_size': [16, 32, 64, 128],
-        'learning_rate': [0.01, 0.005, 0.001, 0.0005, 0.0001],
-        'epochs': [20, 50, 100],
-        'clip_value': [0.1, 0.5, 1.0, 2.0, 5.0]
-    } 
+import json
+import matplotlib.pyplot as plt
+import os
+import sys
 
-    trials = 20
+# Add project root to path if needed
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
+def plot_loss_from_json(json_path, save_path=None):
+    """
+    Plot training and validation loss from a saved results JSON file.
     
-    # Run hyperparameter tuning
-    best_model, best_results = main(param_grid, trials)
+    Args:
+        json_path: Path to the JSON file with loss data
+        save_path: Optional path to save the plot (if None, will display plot)
+    """
+    # Load the JSON data
+    with open(json_path, 'r') as f:
+        results = json.load(f)
+    
+    # Extract training and validation losses
+    train_losses = results['train_losses']
+    val_losses = results['val_losses']
+    
+    # Create the figure
+    plt.figure(figsize=(12, 7))
+    
+    # Plot losses
+    plt.plot(train_losses, label='Training Loss', color='blue', linewidth=2)
+    plt.plot(val_losses, label='Validation Loss', color='red', linewidth=2)
+    
+    # Add grid and styling
+    plt.grid(True, linestyle='--', alpha=0.6)
+    plt.xlabel('Epochs', fontsize=12)
+    plt.ylabel('Loss (MSE)', fontsize=12)
+    
+    # Add title with model info
+    architecture = results.get('architecture', {})
+    config = results.get('config', {})
+    title = f"Training and Validation Loss\n"
+    if architecture:
+        title += f"Architecture: {architecture['hidden_size']} hidden, {architecture['num_gru_layers']} GRU layers\n"
+    if config:
+        title += f"LR: {config.get('lr', 'N/A')}, Batch: {config.get('batch_size', 'N/A')}"
+    
+    plt.title(title, fontsize=14)
+    
+    # Add legend with metrics if available
+    legend_text = ['Training Loss', 'Validation Loss']
+    if 'test_metrics' in results:
+        metrics = results['test_metrics']
+        plt.figtext(0.5, 0.01, 
+                   f"Test RMSE: {metrics.get('rmse', 'N/A'):.4f} | "
+                   f"Test R²: {metrics.get('r2', 'N/A'):.4f} | "
+                   f"Test MAE: {metrics.get('mae', 'N/A'):.4f}",
+                   ha="center", fontsize=12, 
+                   bbox={"facecolor":"lightgray", "alpha":0.5, "pad":5})
+    
+    plt.legend(legend_text, loc='upper right')
+    
+    # Improve layout
+    plt.tight_layout(rect=[0, 0.03, 1, 0.97])
+    
+    # Save or show
+    if save_path:
+        plt.savefig(save_path, dpi=300, bbox_inches='tight')
+        print(f"Plot saved to {save_path}")
+    else:
+        plt.show()
+    
+    plt.close()
+
+if __name__ == "__main__":
+    # Default paths
+    json_path = 'models/best_results.json'
+    save_path = 'models/loss_plot.png'
+    
+    # Allow command line arguments to specify paths
+    if len(sys.argv) > 1:
+        json_path = sys.argv[1]
+    if len(sys.argv) > 2:
+        save_path = sys.argv[2]
+    
+    plot_loss_from_json(json_path, save_path)
+# if __name__ == "__main__":
+    # # Create models directory if it doesn't exist
+    # os.makedirs('models', exist_ok=True)
+
+    # param_grid = {
+    #     'batch_size': [16, 32, 64, 128],
+    #     'learning_rate': [0.01, 0.005, 0.001, 0.0005, 0.0001],
+    #     'epochs': [20, 50, 100],
+    #     'clip_value': [0.1, 0.5, 1.0, 2.0, 5.0],
+    #     'hidden_size': [32, 64, 128],
+    #     'num_gru_layers': [1, 2, 3],
+    #     'mlp_hidden_size': [16, 32, 64]
+    # } 
+    # trials = 20
+    
+    # # Run hyperparameter tuning
+    # best_model, best_results = main(param_grid, trials)
+    
