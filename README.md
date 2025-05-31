@@ -30,7 +30,7 @@ The source code for this project is licensed under the MIT License. This allows 
 ## Installation
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/acrobatics-drone.git
+git clone https://github.com/sophlzy3/acrobatics-drone.git
 cd acrobatics-drone
 
 # (Optional) Create a Python environment
