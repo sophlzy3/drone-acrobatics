@@ -1,7 +1,7 @@
 # Drone Acrobatics
 Acrobatics Drone is an end-to-end deep learning-based flight controller system for quadrotor drones, designed to execute aggressive and dynamic maneuvers in simulation. This project showcases a robust approach for generating drone control commands based on input states, inspired by state-of-the-art research in UAV control and data-driven learning.
 
-Contributors: [Sophie Liu](mailto:sophiezy.liu@mail.utoronto.ca), [George Xue](mailto:george.xue@mail.utoronto.ca), [Lucy Matchette](mailto:lucy.matchette@mail.utoronto.ca), [Ran Qi](lucy.matchette@mail.utoronto.ca)
+Contributors: [Sophie Liu](https://github.com/sophlzy3), [George Xue](https://github.com/sleepmastergx), [Lucy Matchette](https://github.com/LucyM3), [Ran Qi](https://github.com/fastwalker1118)
 
 ## Overview
 This project builds a drone controller that predicts the motor commands needed to transition between drone states in high-speed flight scenarios. The primary components include:
